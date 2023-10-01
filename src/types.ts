@@ -1,0 +1,182 @@
+// import { isNotNil } from "ramda";
+
+import { isNotNil } from "ramda";
+
+// type Messages = {
+//   ClientRequests: {
+//     FullState: {
+//       Request: { age: number };
+//       Response: { gameState: { score: number } };
+//     };
+//   };
+//   ServerRequests: {
+//     CameraPosition: {
+//       Request: {};
+//       Response: { position: number };
+//     };
+//   };
+// };
+
+// export type Messages<M> =
+
+// type MyMessages = {
+//   ClientRequests: {
+//     FullState: {
+//       Request: { age: number };
+//       Response: { gameState: { score: number } };
+//     };
+//   };
+//   ServerRequests: {
+//     CameraPosition: {
+//       Request: {};
+//       Response: { position: number };
+//     };
+//   };
+// };
+
+// TODO: Type the any in the record to the req/ res types
+export type MessagesBase = {
+  ClientRequests: Record<string, any>;
+  ServerRequests: Record<string, any>;
+};
+
+export type KeysOfClientRequests<Messages extends MessagesBase> = Exclude<
+  keyof Messages["ClientRequests"],
+  symbol
+>;
+export type KeysOfServerRequests<Messages extends MessagesBase> = Exclude<
+  keyof Messages["ServerRequests"],
+  symbol
+>;
+
+export type MessageKindClientRequests<Messages extends MessagesBase> =
+  `Client${KeysOfClientRequests<Messages>}Request`;
+
+export type MessageKindClientResponses<Messages extends MessagesBase> =
+  `Client${KeysOfClientRequests<Messages>}Response`;
+
+export type MessageKindServerRequests<Messages extends MessagesBase> =
+  `Server${KeysOfServerRequests<Messages>}Request`;
+
+export type MessageKindServerResponses<Messages extends MessagesBase> =
+  `Server${KeysOfServerRequests<Messages>}Response`;
+
+// export type MessageKindClientRequests<MessageKeys extends string> =
+//   `Client${MessageKeys}Request`;
+//
+// export type MessageKindClientResponses<MessageKeys extends string> =
+//   `Client${MessageKeys}Response`;
+//
+// export type MessageKindServerRequests<MessageKeys extends string> =
+//   `Server${MessageKeys}Request`;
+//
+// export type MessageKindServerResponses<MessageKeys extends string> =
+//   `Server${MessageKeys}Response`;
+
+// export type MessageKindClientRequests =
+//   `Client${keyof Messages["ClientRequests"]}Request`;
+
+// export type MessageKindClientResponses =
+//   `Client${keyof Messages["ClientRequests"]}Response`;
+//
+// export type MessageKindServerRequests =
+//   `Server${keyof Messages["ServerRequests"]}Request`;
+//
+// export type MessageKindServerResponses =
+//   `Server${keyof Messages["ServerRequests"]}Response`;
+
+export type MessageKindRequests<Messages extends MessagesBase> =
+  | MessageKindClientRequests<Messages>
+  | MessageKindServerRequests<Messages>;
+
+export type MessageKindResponses<Messages extends MessagesBase> =
+  | MessageKindClientResponses<Messages>
+  | MessageKindServerResponses<Messages>;
+
+export type MessageKind<Messages extends MessagesBase> =
+  | MessageKindRequests<Messages>
+  | MessageKindResponses<Messages>;
+
+export type MessageKindToRequest<
+  Messages extends MessagesBase,
+  K extends MessageKindResponses<Messages>
+> = K extends `${infer U}Response`
+  ? `${U}Request` extends MessageKindRequests<Messages>
+    ? `${U}Request`
+    : never
+  : never;
+
+export type MessageKindToResponse<
+  Messages extends MessagesBase,
+  K extends MessageKindRequests<Messages>
+> = K extends `${infer U}Request`
+  ? `${U}Response` extends MessageKindResponses<Messages>
+    ? `${U}Response`
+    : never
+  : never;
+
+export type MessagePayload<
+  Messages extends MessagesBase,
+  K extends MessageKind<Messages>
+> = K extends `${"Client" | "Server"}${infer U}${"Request" | "Response"}`
+  ? K extends `${"Client" | "Server"}${U}${infer R}`
+    ? R extends "Request" | "Response"
+      ? U extends keyof Messages["ClientRequests"]
+        ? Messages["ClientRequests"][U][R]
+        : U extends keyof Messages["ServerRequests"]
+        ? Messages["ServerRequests"][U][R]
+        : never
+      : never
+    : any
+  : never;
+
+type MessageRequest<
+  Messages extends MessagesBase,
+  K extends MessageKindRequests<Messages>
+> = {
+  kind: K;
+  id: string;
+  payload: MessagePayload<Messages, K>;
+};
+type MessageResponse<
+  Messages extends MessagesBase,
+  K extends MessageKindResponses<Messages>
+> = {
+  kind: K;
+  id: string;
+  responseTo: string;
+  payload: MessagePayload<Messages, K>;
+};
+
+export type Message<
+  Messages extends MessagesBase,
+  K extends MessageKind<Messages>
+> = K extends MessageKindRequests<Messages>
+  ? MessageRequest<Messages, K>
+  : K extends MessageKindResponses<Messages>
+  ? MessageResponse<Messages, K>
+  : never;
+
+export type MessageUnknown<Messages extends MessagesBase> =
+  | MessageResponse<Messages, any>
+  | MessageRequest<Messages, any>;
+
+export type HandlersServer<Messages extends MessagesBase> = {
+  [K in MessageKindClientRequests<Messages>]: (
+    meta: any,
+    message: Message<Messages, K>
+  ) => void;
+};
+
+export type HandlersClient<Messages extends MessagesBase> = {
+  [K in MessageKindServerRequests<Messages>]: (
+    meta: any,
+    message: Message<Messages, K>
+  ) => void;
+};
+
+export function isResponseMessage<Messages extends MessagesBase>(
+  message: MessageUnknown<Messages>
+): message is MessageResponse<Messages, any> {
+  return isNotNil((message as MessageResponse<Messages, any>).responseTo);
+}

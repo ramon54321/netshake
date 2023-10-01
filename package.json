@@ -1,0 +1,23 @@
+{
+  "name": "handshake",
+  "version": "0.0.1",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "scripts": {
+    "prepublish": "npm run prod:build",
+    "prod:build": "tsc",
+    "dev:build": "tsc --watch"
+  },
+  "devDependencies": {
+    "@types/ramda": "^0.29.5",
+    "@types/uuid": "^9.0.4",
+    "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "ramda": "^0.29.0",
+    "uuid": "^9.0.1"
+  }
+}
