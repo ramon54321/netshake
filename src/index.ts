@@ -18,21 +18,6 @@ import {
 } from "./types";
 export type { HandlersClient, HandlersServer } from "./types";
 
-// type MyMessages = {
-//   ClientRequests: {
-//     FullState: {
-//       Request: { age: number };
-//       Response: { gameState: { score: number } };
-//     };
-//   };
-//   ServerRequests: {
-//     CameraPosition: {
-//       Request: {};
-//       Response: { position: number };
-//     };
-//   };
-// };
-
 class Network<
   Messages extends MessagesBase,
   Handlers extends HandlersClient<Messages> | HandlersServer<Messages>,

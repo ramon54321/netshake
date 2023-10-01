@@ -1,24 +1,6 @@
-// import { isNotNil } from "ramda";
-
 import { isNotNil } from "ramda";
 
-// type Messages = {
-//   ClientRequests: {
-//     FullState: {
-//       Request: { age: number };
-//       Response: { gameState: { score: number } };
-//     };
-//   };
-//   ServerRequests: {
-//     CameraPosition: {
-//       Request: {};
-//       Response: { position: number };
-//     };
-//   };
-// };
-
-// export type Messages<M> =
-
+// -- Messages Example
 // type MyMessages = {
 //   ClientRequests: {
 //     FullState: {
@@ -60,30 +42,6 @@ export type MessageKindServerRequests<Messages extends MessagesBase> =
 
 export type MessageKindServerResponses<Messages extends MessagesBase> =
   `Server${KeysOfServerRequests<Messages>}Response`;
-
-// export type MessageKindClientRequests<MessageKeys extends string> =
-//   `Client${MessageKeys}Request`;
-//
-// export type MessageKindClientResponses<MessageKeys extends string> =
-//   `Client${MessageKeys}Response`;
-//
-// export type MessageKindServerRequests<MessageKeys extends string> =
-//   `Server${MessageKeys}Request`;
-//
-// export type MessageKindServerResponses<MessageKeys extends string> =
-//   `Server${MessageKeys}Response`;
-
-// export type MessageKindClientRequests =
-//   `Client${keyof Messages["ClientRequests"]}Request`;
-
-// export type MessageKindClientResponses =
-//   `Client${keyof Messages["ClientRequests"]}Response`;
-//
-// export type MessageKindServerRequests =
-//   `Server${keyof Messages["ServerRequests"]}Request`;
-//
-// export type MessageKindServerResponses =
-//   `Server${keyof Messages["ServerRequests"]}Response`;
 
 export type MessageKindRequests<Messages extends MessagesBase> =
   | MessageKindClientRequests<Messages>
