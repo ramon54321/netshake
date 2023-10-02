@@ -8,19 +8,28 @@ import {
   MessagesBase,
   MessageUnknown,
   MessageKindResponses,
-  isResponseMessage,
   HandlersClient,
   HandlersServer,
   MessageKindServerRequests,
   MessageKindServerResponses,
   MessageKindClientRequests,
   MessageKindClientResponses,
+  MessageResponse,
 } from "./types";
 export type { HandlersClient, HandlersServer } from "./types";
 
+export function isResponseMessage<Messages extends MessagesBase>(
+  message: MessageUnknown<Messages>
+): message is MessageResponse<Messages, any> {
+  return isNotNil((message as MessageResponse<Messages, any>).responseTo);
+}
+
 class Network<
   Messages extends MessagesBase,
-  Handlers extends HandlersClient<Messages> | HandlersServer<Messages>,
+  MessageMeta,
+  Handlers extends
+    | HandlersClient<Messages, MessageMeta>
+    | HandlersServer<Messages, MessageMeta>,
   MessageKindRequestsNetwork extends MessageKindRequests<Messages>,
   MessageKindResponsesNetwork extends MessageKindResponses<Messages>
 > {
@@ -57,7 +66,7 @@ class Network<
     return message as Message<Messages, K>;
   }
 
-  handleMessage(meta: any, messageString: string) {
+  handleMessage(meta: MessageMeta, messageString: string) {
     const message: MessageUnknown<Messages> = JSON.parse(messageString);
 
     // -- Check if this message is a response to a pending request
@@ -75,11 +84,11 @@ class Network<
     if (isNil(handler)) {
       return console.warn(`Unknown handler: ${message.kind}`);
     }
-    handler(meta, message as any);
+    handler(this, meta, message as any);
   }
 
-  async sendRequest<K extends MessageKindRequests<Messages>>(
-    socket: { sendUTF: (message: string) => any },
+  async sendRequest<K extends MessageKindRequestsNetwork>(
+    socket: { send: (message: string) => any },
     message: Message<Messages, K>
   ): Promise<Message<Messages, MessageKindToResponse<Messages, K>>> {
     const resultPromise = new Promise<
@@ -91,21 +100,36 @@ class Network<
         resolve(response);
       };
     });
-    socket.sendUTF(JSON.stringify(message));
+    socket.send(JSON.stringify(message));
     return resultPromise;
+  }
+
+  async sendResponse<K extends MessageKindResponsesNetwork>(
+    sender: { send: (message: string) => any },
+    message: Message<Messages, K>
+  ) {
+    sender.send(JSON.stringify(message));
   }
 }
 
-export class NetworkClient<Messages extends MessagesBase> extends Network<
+export class NetworkClient<
+  Messages extends MessagesBase,
+  MessageMeta
+> extends Network<
   Messages,
-  HandlersClient<Messages>,
+  MessageMeta,
+  HandlersClient<Messages, MessageMeta>,
   MessageKindClientRequests<Messages>,
   MessageKindServerResponses<Messages>
 > {}
 
-export class NetworkServer<Messages extends MessagesBase> extends Network<
+export class NetworkServer<
+  Messages extends MessagesBase,
+  MessageMeta
+> extends Network<
   Messages,
-  HandlersServer<Messages>,
+  MessageMeta,
+  HandlersServer<Messages, MessageMeta>,
   MessageKindServerRequests<Messages>,
   MessageKindClientResponses<Messages>
 > {}

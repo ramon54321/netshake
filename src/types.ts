@@ -1,10 +1,10 @@
-import { isNotNil } from "ramda";
+import { NetworkClient, NetworkServer } from "./index";
 
 // -- Messages Example
 // type MyMessages = {
 //   ClientRequests: {
 //     FullState: {
-//       Request: { age: number };
+//       Request: { time: number };
 //       Response: { gameState: { score: number } };
 //     };
 //   };
@@ -16,7 +16,7 @@ import { isNotNil } from "ramda";
 //   };
 // };
 
-// TODO: Type the any in the record to the req/ res types
+// TODO: Type the any in the record to the req / res types
 export type MessagesBase = {
   ClientRequests: Record<string, any>;
   ServerRequests: Record<string, any>;
@@ -88,7 +88,7 @@ export type MessagePayload<
     : any
   : never;
 
-type MessageRequest<
+export type MessageRequest<
   Messages extends MessagesBase,
   K extends MessageKindRequests<Messages>
 > = {
@@ -96,7 +96,7 @@ type MessageRequest<
   id: string;
   payload: MessagePayload<Messages, K>;
 };
-type MessageResponse<
+export type MessageResponse<
   Messages extends MessagesBase,
   K extends MessageKindResponses<Messages>
 > = {
@@ -119,22 +119,18 @@ export type MessageUnknown<Messages extends MessagesBase> =
   | MessageResponse<Messages, any>
   | MessageRequest<Messages, any>;
 
-export type HandlersServer<Messages extends MessagesBase> = {
+export type HandlersServer<Messages extends MessagesBase, MessageMeta> = {
   [K in MessageKindClientRequests<Messages>]: (
-    meta: any,
+    network: NetworkServer<Messages, MessageMeta>,
+    meta: MessageMeta,
     message: Message<Messages, K>
   ) => void;
 };
 
-export type HandlersClient<Messages extends MessagesBase> = {
+export type HandlersClient<Messages extends MessagesBase, MessageMeta> = {
   [K in MessageKindServerRequests<Messages>]: (
-    meta: any,
+    network: NetworkClient<Messages, MessageMeta>,
+    meta: MessageMeta,
     message: Message<Messages, K>
   ) => void;
 };
-
-export function isResponseMessage<Messages extends MessagesBase>(
-  message: MessageUnknown<Messages>
-): message is MessageResponse<Messages, any> {
-  return isNotNil((message as MessageResponse<Messages, any>).responseTo);
-}
