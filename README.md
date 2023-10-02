@@ -1,4 +1,4 @@
-## Handshake
+## Netshake
 
 Typed interface between server and clients. Works well with websockets.
 
