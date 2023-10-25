@@ -16,7 +16,12 @@ import {
   MessageKindClientResponses,
   MessageResponse,
 } from "./types";
-export type { HandlersClient, HandlersServer } from "./types";
+export type {
+  HandlersClient,
+  HandlersServer,
+  MessageRequest,
+  MessageResponse,
+} from "./types";
 
 export function isResponseMessage<Messages extends MessagesBase>(
   message: MessageUnknown<Messages>
