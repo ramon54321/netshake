@@ -8,6 +8,7 @@ import {
   MessagesBase,
   MessageUnknown,
   MessageKindResponses,
+  MessageKindPushes,
   HandlersClient,
   HandlersServer,
   MessageKindServerRequests,
@@ -15,12 +16,16 @@ import {
   MessageKindClientRequests,
   MessageKindClientResponses,
   MessageResponse,
+  MessageKindClientPushes,
+  MessageKindServerPushes,
 } from "./types";
 export type {
   HandlersClient,
   HandlersServer,
   MessageRequest,
   MessageResponse,
+  MessagePush,
+  MessageUnknown,
 } from "./types";
 
 export function isResponseMessage<Messages extends MessagesBase>(
@@ -36,7 +41,8 @@ class Network<
     | HandlersClient<Messages, MessageMeta>
     | HandlersServer<Messages, MessageMeta>,
   MessageKindRequestsNetwork extends MessageKindRequests<Messages>,
-  MessageKindResponsesNetwork extends MessageKindResponses<Messages>
+  MessageKindResponsesNetwork extends MessageKindResponses<Messages>,
+  MessageKindPushesNetwork extends MessageKindPushes<Messages>
 > {
   private handlers: Handlers;
   private responseTable: Record<string, (message: any) => any> = {};
@@ -71,6 +77,18 @@ class Network<
     return message as Message<Messages, K>;
   }
 
+  createPushMessage<K extends MessageKindPushesNetwork>(
+    kind: K,
+    payload: MessagePayload<Messages, K>
+  ): Message<Messages, K> {
+    const message = {
+      kind,
+      id: uuidv4(),
+      payload,
+    };
+    return message as Message<Messages, K>;
+  }
+
   handleMessage(meta: MessageMeta, messageString: string) {
     const message: MessageUnknown<Messages> = JSON.parse(messageString);
 
@@ -84,7 +102,7 @@ class Network<
       return;
     }
 
-    // -- Not a response to a request, handle as command
+    // -- Not a response to a request, handle as push
     const handler = (this.handlers as any)[message.kind];
     if (isNil(handler)) {
       return console.warn(`Unknown handler: ${message.kind}`);
@@ -115,6 +133,13 @@ class Network<
   ) {
     sender.send(JSON.stringify(message));
   }
+
+  async sendPush<K extends MessageKindPushesNetwork>(
+    sender: { send: (message: string) => any },
+    message: Message<Messages, K>
+  ) {
+    sender.send(JSON.stringify(message));
+  }
 }
 
 export class NetworkClient<
@@ -125,7 +150,8 @@ export class NetworkClient<
   MessageMeta,
   HandlersClient<Messages, MessageMeta>,
   MessageKindClientRequests<Messages>,
-  MessageKindServerResponses<Messages>
+  MessageKindServerResponses<Messages>,
+  MessageKindClientPushes<Messages>
 > {}
 
 export class NetworkServer<
@@ -136,5 +162,6 @@ export class NetworkServer<
   MessageMeta,
   HandlersServer<Messages, MessageMeta>,
   MessageKindServerRequests<Messages>,
-  MessageKindClientResponses<Messages>
+  MessageKindClientResponses<Messages>,
+  MessageKindServerPushes<Messages>
 > {}
